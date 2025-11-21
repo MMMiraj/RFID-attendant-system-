@@ -1,0 +1,133 @@
+// Project: Store Data into RFID Tag and Display on I2C LCD using NodeMCU (ESP8266)
+
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+#include <SPI.h>
+#include <MFRC522.h>
+
+// ----- LCD -----
+LiquidCrystal_I2C lcd(0x27, 16, 2);  // If nothing shows up, try address 0x3F
+
+// ----- RC522 RFID -----
+constexpr uint8_t RST_PIN = D3;   // RST pin
+constexpr uint8_t SS_PIN  = D4;   // SDA pin
+MFRC522 mfrc522(SS_PIN, RST_PIN);
+MFRC522::MIFARE_Key key;
+
+// ----- Data -----
+int blockNum = 2;
+byte blockData[16] = {"xxx-xxx-xxx"};  // your id number
+byte bufferLen = 18;
+byte readBlockData[18];
+MFRC522::StatusCode status;
+
+// ----- Setup -----
+void setup() {
+  Serial.begin(115200);
+  Wire.begin();              // Initialize I2C
+  lcd.init();                // Initialize LCD
+  lcd.backlight();
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("RFID Writer Ready");
+
+  SPI.begin();               // Init SPI bus
+  mfrc522.PCD_Init();        // Init RFID
+  delay(500);
+  lcd.setCursor(0, 1);
+  lcd.print("Scan a RFID Tag");
+  Serial.println("Scan a RFID Tag to write data...");
+}
+
+// ----- Main Loop -----
+void loop() {
+  // Prepare authentication key (default key FFFFFFFFFFFFh)
+  for (byte i = 0; i < 6; i++) key.keyByte[i] = 0xFF;
+
+  // Wait for a new card
+  if (!mfrc522.PICC_IsNewCardPresent()) return;
+  if (!mfrc522.PICC_ReadCardSerial()) return;
+
+  Serial.println("\nCard Detected");
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Card Detected");
+
+  // Print UID
+  Serial.print("Card UID:");
+  for (byte i = 0; i < mfrc522.uid.size; i++) {
+    Serial.print(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " ");
+    Serial.print(mfrc522.uid.uidByte[i], HEX);
+  }
+  Serial.println();
+
+  // Write to RFID
+  Serial.println("Writing to Data Block...");
+  lcd.setCursor(0, 1);
+  lcd.print("Writing Data...");
+  WriteDataToBlock(blockNum, blockData);
+
+  delay(500);
+
+  // Read from RFID
+  Serial.println("Reading from Data Block...");
+  ReadDataFromBlock(blockNum, readBlockData);
+
+  Serial.print("Data in Block ");
+  Serial.print(blockNum);
+  Serial.print(": ");
+  for (int j = 0; j < 16; j++) {
+    Serial.write(readBlockData[j]);
+  }
+  Serial.println();
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Data Stored:");
+  lcd.setCursor(0, 1);
+  for (int j = 0; j < 16; j++) {
+    lcd.write(readBlockData[j]);
+  }
+
+  delay(3000);
+  lcd.clear();
+  lcd.print("Scan Next Card");
+  mfrc522.PICC_HaltA();
+  mfrc522.PCD_StopCrypto1();
+}
+
+// ----- Function: Write Data -----
+void WriteDataToBlock(int blockNum, byte blockData[]) {
+  status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A,
+                                    blockNum, &key, &(mfrc522.uid));
+  if (status != MFRC522::STATUS_OK) {
+    Serial.print("Auth failed for Write: ");
+    Serial.println(mfrc522.GetStatusCodeName(status));
+    return;
+  }
+  status = mfrc522.MIFARE_Write(blockNum, blockData, 16);
+  if (status != MFRC522::STATUS_OK) {
+    Serial.print("Write failed: ");
+    Serial.println(mfrc522.GetStatusCodeName(status));
+  } else {
+    Serial.println("Data written successfully!");
+  }
+}
+
+// ----- Function: Read Data -----
+void ReadDataFromBlock(int blockNum, byte readBlockData[]) {
+  status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A,
+                                    blockNum, &key, &(mfrc522.uid));
+  if (status != MFRC522::STATUS_OK) {
+    Serial.print("Auth failed for Read: ");
+    Serial.println(mfrc522.GetStatusCodeName(status));
+    return;
+  }
+  status = mfrc522.MIFARE_Read(blockNum, readBlockData, &bufferLen);
+  if (status != MFRC522::STATUS_OK) {
+    Serial.print("Read failed: ");
+    Serial.println(mfrc522.GetStatusCodeName(status));
+  } else {
+    Serial.println("Data read successfully!");
+  }
+}

@@ -1,0 +1,53 @@
+// Smart Attendance System with Google Sheets and LCD Display
+// Location: Sreemangal, Bangladesh 🇧🇩
+// Updated and cleaned for stable use with ESP8266 + RFID
+
+var ss = SpreadsheetApp.openById('1s40T3MzUFXhSFQvthRO8Rq8U2JZArD0bATfOrKvCgVc'); // Your Google Sheet ID
+var sheet = ss.getSheetByName('Sheet1');
+var timezone = "Asia/Dhaka"; // Timezone for Bangladesh (covers Sreemangal)
+
+//---------------------------------------------
+// Main function that runs when ESP8266 sends a GET request
+//---------------------------------------------
+function doGet(e) {
+  Logger.log(JSON.stringify(e));
+
+  // Check if valid data received
+  if (!e.parameter.name) {
+    return ContentService.createTextOutput("No 'name' parameter received");
+  }
+
+  // Get current date and time
+  var Curr_Date = new Date();
+  var formattedDate = Utilities.formatDate(Curr_Date, timezone, 'dd-MMM-yyyy');
+  var formattedTime = Utilities.formatDate(Curr_Date, timezone, 'hh:mm:ss a');
+
+  // Clean the name (remove quotes or extra symbols)
+  var name = stripQuotes(e.parameter.name);
+
+  // Append data to Google Sheet
+  var nextRow = sheet.getLastRow() + 1;
+  sheet.getRange("A" + nextRow).setValue(formattedDate);
+  sheet.getRange("B" + nextRow).setValue(formattedTime);
+  sheet.getRange("C" + nextRow).setValue(name);
+
+  // Send confirmation message back to ESP8266
+  return ContentService.createTextOutput("Attendance stored for " + name + " from Sreemangal.");
+}
+
+//---------------------------------------------
+// Utility function to clean up text input
+//---------------------------------------------
+function stripQuotes(value) {
+  return value.toString().replace(/^["']|['"]$/g, "");
+}
+
+//---------------------------------------------
+// Optional: Handle POST requests (for future use)
+//---------------------------------------------
+function doPost(e) {
+  if (e.parameter.value !== undefined) {
+    var range = sheet.getRange('A2');
+    range.setValue(e.parameter.value);
+  }
+}
