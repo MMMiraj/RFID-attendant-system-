@@ -4,7 +4,7 @@
 
 var ss = SpreadsheetApp.openById('1s40T3MzUFXhSFQvthRO8Rq8U2JZArD0bATfOrKvCgVc'); // Your Google Sheet ID
 var sheet = ss.getSheetByName('Sheet1');
-var timezone = "Asia/Dhaka"; // Timezone for Bangladesh (covers Sreemangal)
+var timezone = "Asia/Dhaka"; // Timezone for Bangladesh
 
 //---------------------------------------------
 // Main function that runs when ESP8266 sends a GET request
@@ -50,4 +50,5 @@ function doPost(e) {
     var range = sheet.getRange('A2');
     range.setValue(e.parameter.value);
   }
+
 }
