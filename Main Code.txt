@@ -21,12 +21,12 @@ const int blockNum = 2;
 const byte bufferLen = 16;
 byte readBlockData[bufferLen];
 
-const char* sheet_url = "https://script.google.com/macros/s/AKfycbzD8Wy7mw6jAhiQiQYIRzoGUZCNjvZz7Z-VNFYGbNdLVgblj459wRV_4Ok6namd67Xp/exec?name=";
+const char* sheet_url = "Your Google Sheet URL";
 //My Sheet URK (https://script.google.com/macros/s/AKfycbzD8Wy7mw6jAhiQiQYIRzoGUZCNjvZz7Z-VNFYGbNdLVgblj459wRV_4Ok6namd67Xp/exec?name=)
 
 // ---------------- WiFi ----------------
-const char* WIFI_SSID = "vivo";
-const char* WIFI_PASSWORD = "1415926535";
+const char* WIFI_SSID = "XXXXXX";
+const char* WIFI_PASSWORD = "XXXXXXXXX";
 
 // ---------------- LCD ----------------
 LiquidCrystal_I2C lcd(0x27, 16, 2);
@@ -251,3 +251,4 @@ void loop() {
     lcd.print("Scan your card");
 }
 }
+
